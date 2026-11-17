@@ -8,6 +8,10 @@ on:
         description: Image tag (use a new immutable version)
         required: true
         default: v1.5.0-cli.1
+      smoke_only:
+        description: Verify existing images without rebuilding
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -17,6 +21,7 @@ env:
   VERSION: ${{ github.event.inputs.version || github.ref_name }}
 jobs:
   build:
+    if: ${{ !inputs.smoke_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,7 +111,9 @@ jobs:
           docker buildx imagetools inspect "$IMAGE:$VERSION"
   smoke:
     needs: manifest
+    if: ${{ always() && (needs.manifest.result == 'success' || inputs.smoke_only) }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -129,11 +136,11 @@ jobs:
         working-directory: deployments/release
         run: |
           for n in $(seq 1 120); do
-            if curl -fsS http://localhost:8080/api/instances/ >/dev/null; then break; fi
+            if curl --max-time 5 -fsS http://localhost:8080/api/instances/ >/dev/null; then break; fi
             sleep 5
           done
-          curl -fsS http://localhost:8080/ >/dev/null
-          curl -fsS http://localhost:8080/api/instances/ >/dev/null
+          curl --max-time 10 -fsS http://localhost:8080/ >/dev/null
+          curl --max-time 10 -fsS http://localhost:8080/api/instances/ >/dev/null
           docker compose cp plane api:/tmp/plane
           docker compose cp ../../apps/cli/tests/e2e.py api:/tmp/cli-e2e.py
           docker compose exec -T -e PYTHONPATH=/code -e PLANE_E2E_SERVER=http://proxy -e PLANE_CLI_BINARY=/tmp/plane api python /tmp/cli-e2e.py
