@@ -124,8 +124,7 @@ jobs:
         env:
           DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          CGO_ENABLED=0 go build -C apps/cli -o ../../deployments/release/plane .
-          cd deployments/release
+          CGO_ENABLED=0 go build -C apps/cli -o ../../plane .
           bash configure.sh "$DOCKERHUB_NAMESPACE" "$VERSION" http://localhost:8080
           echo 'LISTEN_HTTP_PORT=8080' >> .env
           echo 'API_KEY_RATE_LIMIT=10000/hour' >> .env
@@ -135,7 +134,6 @@ jobs:
           docker compose ps -a
           docker compose run --rm --no-deps proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Check web and API readiness
-        working-directory: deployments/release
         run: |
           for n in $(seq 1 120); do
             if curl --max-time 5 -fsS http://localhost:8080/api/instances/ >/dev/null; then break; fi
@@ -144,13 +142,11 @@ jobs:
           curl --max-time 10 -fsS http://localhost:8080/ >/dev/null
           curl --max-time 10 -fsS http://localhost:8080/api/instances/ >/dev/null
           docker compose cp plane api:/tmp/plane
-          docker compose cp ../../apps/cli/tests/e2e.py api:/tmp/cli-e2e.py
+          docker compose cp apps/cli/tests/e2e.py api:/tmp/cli-e2e.py
           docker compose exec -T -e PYTHONPATH=/code -e PLANE_E2E_SERVER=http://proxy -e PLANE_CLI_BINARY=/tmp/plane api python /tmp/cli-e2e.py
       - name: Logs on failure
         if: failure()
-        working-directory: deployments/release
         run: docker compose logs --tail=80
       - name: Clean up
         if: always()
-        working-directory: deployments/release
         run: docker compose down -v

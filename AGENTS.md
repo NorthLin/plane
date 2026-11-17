@@ -1,5 +1,14 @@
 # Agent Development Guide
 
+## Deploying Plane
+
+For server deployment, follow [DEPLOYMENT.md](./DEPLOYMENT.md). The root
+docker-compose.yml uses published images; configure.sh creates the root .env.
+setup.sh and docker-compose-local.yml are for development. The original source
+build stack is docker-compose-build.yml. Do not run setup.sh on a deployment:
+it overwrites environment files. Preserve existing secrets and Compose volume names
+when upgrading; never use docker compose down -v on a real deployment.
+
 ## Commands
 
 - `pnpm dev` - Start all dev servers (web:3000, admin:3001, space:3002, live:3100); the API runs in Docker via `docker-compose-local.yml` on :8000

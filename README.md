@@ -28,6 +28,16 @@ Meet [Plane](https://plane.so/), an open-source project management tool to track
 
 > Plane is evolving every day. Your suggestions, ideas, and reported bugs help us immensely. Do not hesitate to join in the conversation on [Forum](https://forum.plane.so) or raise a GitHub issue. We read everything and respond to most.
 
+## Deploy this fork with Docker Compose
+
+Use the [Plane server deployment guide](./DEPLOYMENT.md). The root
+[docker-compose.yml](./docker-compose.yml) pulls the published images, and
+[configure.sh](./configure.sh) generates configuration and random secrets.
+This deploys the complete Plane server; installing the CLI is optional.
+
+The previous source-build stack is available as docker-compose-build.yml.
+Local development continues to use docker-compose-local.yml and setup.sh.
+
 ## 🚀 Installation
 
 Getting started with Plane is simple. Choose the setup that works best for you:

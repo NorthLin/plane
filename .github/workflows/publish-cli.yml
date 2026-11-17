@@ -49,7 +49,9 @@ jobs:
         run: bash apps/cli/package.sh "$RELEASE_TAG"
       - name: Package deployment and installer
         run: |
-          tar -czf apps/cli/dist/release/plane-deployment.tar.gz -C deployments/release docker-compose.yml configure.sh README.md
+          cp DEPLOYMENT.md apps/cli/dist/release/README.md
+          tar -czf apps/cli/dist/release/plane-deployment.tar.gz docker-compose.yml configure.sh DEPLOYMENT.md -C apps/cli/dist/release README.md
+          rm apps/cli/dist/release/README.md
           cp apps/cli/install.sh apps/cli/dist/release/install.sh
       - name: Publish downloads
         env:

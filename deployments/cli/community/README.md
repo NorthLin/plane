@@ -1,3 +1,6 @@
+> To deploy **this fork**, use the repository root [Compose guide](../../../DEPLOYMENT.md).
+> The instructions below describe the upstream installer and upstream images.
+
 # Self Hosting
 
 In this guide, we will walk you through the process of setting up a self-hosted environment. Self-hosting allows you to have full control over your applications and data. It's a great way to ensure privacy, control, and customization.
