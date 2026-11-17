@@ -22,7 +22,7 @@ set -o noclobber
   echo 'LISTEN_HTTP_PORT=80'
   echo 'NUM_PROXIES=1'
   echo 'CERT_EMAIL='
-  echo 'CERT_ACME_CA='
+  echo 'CERT_ACME_CA=https://acme-v02.api.letsencrypt.org/directory'
   echo 'CERT_ACME_DNS='
   echo 'TRUSTED_PROXIES=private_ranges'
   echo 'POSTGRES_PASSWORD='"$(openssl rand -hex 24)"

@@ -96,7 +96,11 @@ cat
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(output, "$(touch should-not-exist)|"+configDir+"|42|2|"+configDir) || !strings.Contains(output, `"local_seq":9`) {
+	physicalDir, err := filepath.EvalSymlinks(configDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output, "$(touch should-not-exist)|"+configDir+"|42|2|"+physicalDir) || !strings.Contains(output, `"local_seq":9`) {
 		t.Fatal(output)
 	}
 	if _, err = os.Stat(filepath.Join(configDir, "should-not-exist")); !os.IsNotExist(err) {

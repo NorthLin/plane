@@ -4,7 +4,7 @@ Requires Docker Engine with Compose v2 on Linux amd64 or arm64. Download this
 directory from the same release tag as the images; keep docker-compose.yml and
 configure.sh together. All six Plane images use your personal Docker Hub account.
 
-    bash configure.sh YOUR_DOCKERHUB_USERNAME v1.5.0-cli.1 https://plane.example.com
+    bash configure.sh YOUR_DOCKERHUB_USERNAME v1.5.0-cli.2 https://plane.example.com
     docker compose pull
     docker compose up -d
     docker compose logs -f migrator api

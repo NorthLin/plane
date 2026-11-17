@@ -14,7 +14,7 @@ Download install.sh from the source at the release tag, inspect it, then run it:
     plane --version
 
 The installer verifies SHA256SUMS and installs to ~/.local/bin. Set
-PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.1 to pin
+PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.2 to pin
 a release. Ensure the installation directory is on PATH. Homebrew users can run:
 
     brew install NorthLin/tap/plane-cli
