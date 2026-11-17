@@ -10,7 +10,7 @@ import re
 # Django imports
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponseRedirect
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction, connection
 from django.db.models import (
     Case,
     CharField,
@@ -1548,6 +1548,7 @@ class IssueCommentListCreateAPIEndpoint(BaseAPIView):
             409: EXTERNAL_ID_EXISTS_RESPONSE,
         },
     )
+    @transaction.atomic
     def post(self, request, slug, project_id, issue_id):
         """Create work item comment
 
@@ -1585,7 +1586,34 @@ class IssueCommentListCreateAPIEndpoint(BaseAPIView):
 
         serializer = IssueCommentCreateSerializer(data=request.data)
         if serializer.is_valid():
+            asset_ids = set(serializer.validated_data.pop("asset_ids", []))
+            # Match model-event lock order before acquiring asset row locks.
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s)", [728194620])
+            assets = list(
+                FileAsset.objects.select_for_update().filter(
+                    id__in=asset_ids,
+                    workspace_id=issue.workspace_id,
+                    project_id=project_id,
+                    created_by=request.user,
+                    is_uploaded=True,
+                    is_deleted=False,
+                    entity_type=FileAsset.EntityTypeContext.COMMENT_DESCRIPTION,
+                    comment_id__isnull=True,
+                    issue_id__isnull=True,
+                )
+            )
+            if len(assets) != len(asset_ids):
+                return Response(
+                    {"asset_ids": "Images must be your uploaded, unbound comment assets in this project"}, status=400
+                )
             serializer.save(project_id=project_id, issue_id=issue_id, actor=request.user)
+            for asset in assets:
+                asset.comment_id = serializer.instance.id
+                asset.issue_id = issue_id
+                asset.entity_identifier = str(serializer.instance.id)
+                asset.save(update_fields=["comment_id", "issue_id", "entity_identifier"])
+
             issue_comment = IssueComment.objects.get(pk=serializer.instance.id)
 
             issue_activity.delay(

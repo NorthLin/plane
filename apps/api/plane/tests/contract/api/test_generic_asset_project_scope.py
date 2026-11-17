@@ -297,7 +297,7 @@ class TestGenericAssetExternalIdDedup:
         response = self._post(api_key_client, workspace, joined_project.id)
 
         assert response.status_code == status.HTTP_200_OK, response.data
-        assert set(response.data) == {"upload_data", "asset_id", "asset_url"}
+        assert set(response.data) == {"upload_data", "asset_id", "asset_url", "entity_type"}
         assert response.data["asset_id"] != str(foreign_asset.id)
         assert FileAsset.objects.get(id=response.data["asset_id"]).project_id == joined_project.id
 

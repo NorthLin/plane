@@ -113,6 +113,63 @@ try:
     dest = Path(profile) / "downloaded.png"
     run("attachments", "download", asset, *args, "--issue", issue_id, "--output", str(dest))
     assert hashlib.sha256(dest.read_bytes()).digest() == hashlib.sha256(png).digest()
+    # Inline comment images use durable asset IDs, not expiring URLs or task attachments.
+    from lxml import html
+    import urllib.request
+    from django.test import Client
+    from django.conf import settings
+
+    image_comment = run(
+        "comments",
+        "add",
+        *args,
+        "--issue",
+        issue_id,
+        "--body",
+        "<p>Before image</p>{{image:1}}<p>After image</p>",
+        "--image",
+        str(source),
+        "--image",
+        str(source),
+    )
+    tree = html.fromstring(image_comment["comment_html"])
+    nodes = tree.xpath(".//image-component")
+    assert len(nodes) == 2
+    assert (
+        image_comment["comment_html"].index("Before image")
+        < image_comment["comment_html"].index(nodes[0].get("src"))
+        < image_comment["comment_html"].index("After image")
+    )
+    assert "{{image:" not in image_comment["comment_html"]
+    browser_session = Client()
+    browser_session.force_login(user)
+    for node in nodes:
+        image_id = node.get("src")
+        image_asset = FileAsset.objects.get(id=image_id)
+        assert str(image_asset.comment_id) == image_comment["id"]
+        assert str(image_asset.issue_id) == issue_id
+        assert image_asset.entity_type == "COMMENT_DESCRIPTION"
+        resolved = run("api", "GET", f"/api/v1/workspaces/{ctx['workspace']}/assets/{image_id}/")
+        with urllib.request.urlopen(resolved["asset_url"], timeout=15) as response:
+            assert response.read() == png
+        # Fetch the same authenticated endpoint used by the web editor's image node.
+        request = urllib.request.Request(
+            server + f"/api/assets/v2/workspaces/{ctx['workspace']}/projects/{project}/{image_id}/",
+            headers={
+                "Cookie": settings.SESSION_COOKIE_NAME
+                + "="
+                + browser_session.cookies[settings.SESSION_COOKIE_NAME].value
+            },
+        )
+        with urllib.request.urlopen(request, timeout=15) as response:
+            assert response.read() == png
+    image_only = run("comments", "add", *args, "--issue", issue_id, "--image", str(source))
+    image_only_asset = FileAsset.objects.get(comment_id=image_only["id"])
+    assert str(image_only_asset.id) in image_only["comment_html"]
+    assert image_only_asset.is_uploaded
+    listed = run("comments", "list", *args, "--issue", issue_id)
+    assert any(c["id"] == image_comment["id"] for c in listed["results"])
+    wait_event("comment.created", image_comment["id"])
     events = [json.loads(x) for x in run("events", "list", parse=False).splitlines()]
     assert len({e["id"] for e in events}) == len(events)
     pending = run("events", "wait", "--consumer", "agent", "--timeout", "2")
@@ -364,6 +421,8 @@ print(json.dumps({'event': event, 'attempt': attempt, 'profile_ok': True}))
         "offline replay",
         "PNG upload event",
         "download SHA256 equality",
+        "positioned multi-image comment upload and asset binding",
+        "comment image API download and web editor session route",
         "event deduplication",
         "consumer acknowledgment",
         "midstream API key revocation",

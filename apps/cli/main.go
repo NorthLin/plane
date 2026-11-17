@@ -339,13 +339,14 @@ func resourceCommands(resource string) *cobra.Command {
 	return parent
 }
 func commentCommands() *cobra.Command {
-	p := &cobra.Command{Use: "comments", Short: "Read or add task comments", Long: "Read comment_html or post literal HTML with --body. Embedded image-component src values\nare asset UUIDs: resolve them with plane api GET /api/v1/workspaces/SLUG/assets/UUID/.\nDownload the returned temporary asset_url. Local image upload/insertion into comments\nis not supported; attachments upload adds a task attachment. See the packaged README.md."}
+	p := &cobra.Command{Use: "comments", Short: "Read or add task comments", Long: "Read comment_html or post literal HTML with --body. Embedded image-component src values\nare asset UUIDs: resolve them with plane api GET /api/v1/workspaces/SLUG/assets/UUID/.\nDownload the returned temporary asset_url. Use comments add --image FILE to upload and insert local images (server v1.5.0-cli.4+).\nattachments upload adds a task attachment. See the packaged README.md."}
 	var project, issue, body string
+	var images []string
 	p.PersistentFlags().StringVar(&project, "project", "", "Project UUID")
 	p.PersistentFlags().StringVar(&issue, "issue", "", "Work item UUID")
 	for _, verb := range []string{"list", "add"} {
 		verb := verb
-		c := &cobra.Command{Use: verb, Short: map[string]string{"list": "List task comments", "add": "Post an HTML comment with --body"}[verb], Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
+		c := &cobra.Command{Use: verb, Short: map[string]string{"list": "List task comments", "add": "Post an HTML comment with optional local images"}[verb], Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, e := loadConfig()
 			if e != nil {
 				return e
@@ -359,6 +360,14 @@ func commentCommands() *cobra.Command {
 			}
 			method, data := "GET", ""
 			if verb == "add" {
+				if len(images) > 0 {
+					return addImageComment(cfg, base, project, issue, body, images)
+				}
+				if strings.TrimSpace(body) == "" {
+					return errors.New("provide --body or --image")
+				}
+			}
+			if verb == "add" {
 				method = "POST"
 				b, _ := json.Marshal(map[string]string{"comment_html": body})
 				data = string(b)
@@ -366,10 +375,10 @@ func commentCommands() *cobra.Command {
 			return call(cfg, method, base+"projects/"+url.PathEscape(project)+"/work-items/"+url.PathEscape(issue)+"/comments/", data)
 		}}
 		if verb == "add" {
-			c.Long = "Post literal HTML using --body. Local image paths and @file are not read or uploaded.\nInline image upload/insertion into comments is not supported. Use attachments upload\nfor a task attachment, or the web editor for inline comment images."
+			c.Long = "Post HTML with --body; add local images with repeated --image FILE flags.\nImages append after the text, or replace {{image:1}}, {{image:2}} placeholders.\nRequires Plane server v1.5.0-cli.4+ for images. --body is literal HTML, not @file."
 			c.Example = "  plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'"
-			c.Flags().StringVar(&body, "body", "", "Literal comment HTML; local paths and @file are not uploaded/read")
-			c.MarkFlagRequired("body")
+			c.Flags().StringVar(&body, "body", "", "Comment HTML; use {{image:1}} to position --image files")
+			c.Flags().StringArrayVar(&images, "image", nil, "Local image file (repeatable); append or use {{image:N}} in --body")
 		} else {
 			c.Long = "List comments including comment_html. For an embedded image-component, resolve its\nsrc asset UUID with plane api GET /api/v1/workspaces/SLUG/assets/UUID/, then download\nthe returned temporary asset_url. See the packaged README.md for a curl example."
 		}

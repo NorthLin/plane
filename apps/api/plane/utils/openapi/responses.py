@@ -424,6 +424,7 @@ GENERIC_ASSET_UPLOAD_SUCCESS_RESPONSE = OpenApiResponse(
                     },
                 },
                 "asset_id": "550e8400-e29b-41d4-a716-446655440000",
+                "entity_type": "ISSUE_ATTACHMENT",
                 "asset_url": "https://cdn.example.com/workspace-id/uuid-filename.pdf",
             },
         )

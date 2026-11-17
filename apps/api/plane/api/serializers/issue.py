@@ -728,9 +728,18 @@ class IssueCommentCreateSerializer(BaseSerializer):
     access control, and external integration tracking.
     """
 
+    asset_ids = serializers.ListField(child=serializers.UUIDField(), required=False, write_only=True)
+
+    def validate_comment_html(self, value):
+        valid, _, sanitized = validate_html_content(value)
+        if not valid:
+            raise serializers.ValidationError("HTML content is not valid")
+        return sanitized if sanitized is not None else value
+
     class Meta:
         model = IssueComment
         fields = [
+            "asset_ids",
             "comment_json",
             "comment_html",
             "access",

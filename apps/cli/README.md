@@ -14,7 +14,7 @@ Download install.sh from the source at the release tag, inspect it, then run it:
     plane --version
 
 The installer verifies SHA256SUMS and installs to ~/.local/bin. Set
-PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.3 to pin
+PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.4 to pin
 a release. Ensure the installation directory is on PATH. Homebrew users can run:
 
     brew install NorthLin/tap/plane-cli
@@ -143,13 +143,30 @@ bytes; a handler uses the same commands to fetch the content.
 
     plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'
 
---body is literal HTML, not a file path; it does not read @file or upload local
-images. Plane's web editor supports images in comments and task descriptions, but
-the CLI currently has no command to upload and insert an image at a chosen position
-in either. Setting src to a local path does not upload a file. Use the web editor
-for inline image uploads, or upload a task attachment with the command above.
-Adding or replacing image-component HTML alone does not complete the image upload
-and entity-binding workflow.
+Upload local images into a new comment (requires Plane server v1.5.0-cli.4+):
+
+    plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Evidence</p>' --image ./screenshot.png
+    plane comments add --project PROJECT_UUID --issue ISSUE_UUID --image ./screenshot.png
+
+Repeat --image for multiple PNG/JPEG/GIF/WebP files. Without placeholders, images
+append after the text in flag order. For specific positions, put {{image:1}},
+{{image:2}}, etc. between HTML blocks; numbers refer to the --image flag order:
+
+    plane comments add --project PROJECT_UUID --issue ISSUE_UUID \
+      --body '<p>Before</p>{{image:1}}<p>After</p>{{image:2}}' \
+      --image ./before.png --image ./after.png
+
+Images without a placeholder append at the end. The CLI validates local files and
+positions before uploading, confirms each upload, then posts the comment with
+stable asset IDs. An upload failure does not post the comment; errors report any
+already uploaded asset IDs. If posting fails after upload, check the comments
+before retrying: a network failure can leave the result uncertain. Uploaded but
+unbound files are not automatically removed. Older servers report an upgrade error.
+
+--body remains literal HTML, not a file path or @file. Use --image to upload files;
+local paths inside HTML do not upload them. Task description image insertion is
+still not provided by a dedicated CLI command. Existing task attachments remain
+separate from inline comment images.
 
 ## Local callbacks
 

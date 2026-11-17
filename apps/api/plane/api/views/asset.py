@@ -524,6 +524,11 @@ class GenericAssetEndpoint(BaseAPIView):
         project_id = request.data.get("project_id")
         external_id = request.data.get("external_id")
         external_source = request.data.get("external_source")
+        entity_type = request.data.get("entity_type", "ISSUE_ATTACHMENT")
+        if entity_type not in ["ISSUE_ATTACHMENT", "COMMENT_DESCRIPTION"]:
+            return Response({"error": "Unsupported entity_type"}, status=status.HTTP_400_BAD_REQUEST)
+        if entity_type == "COMMENT_DESCRIPTION" and type not in settings.INLINE_SAFE_MIME_TYPES:
+            return Response({"error": "Comment images must be PNG, JPEG, GIF or WebP"}, status=400)
 
         # Check if the request is valid
         if not name or not size:
@@ -532,6 +537,8 @@ class GenericAssetEndpoint(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if entity_type == "COMMENT_DESCRIPTION" and (size <= 0 or size > settings.FILE_SIZE_LIMIT):
+            return Response({"error": "Comment image exceeds the upload size limit"}, status=400)
         # Check if the file size is within the limit
         size_limit = min(size, settings.FILE_SIZE_LIMIT)
 
@@ -602,7 +609,7 @@ class GenericAssetEndpoint(BaseAPIView):
             created_by=request.user,
             external_id=external_id,
             external_source=external_source,
-            entity_type=FileAsset.EntityTypeContext.ISSUE_ATTACHMENT,  # Using ISSUE_ATTACHMENT since we'll bind it to issues # noqa: E501
+            entity_type=entity_type,
         )
 
         # Get the presigned URL
@@ -613,6 +620,7 @@ class GenericAssetEndpoint(BaseAPIView):
             {
                 "upload_data": presigned_url,
                 "asset_id": str(asset.id),
+                "entity_type": asset.entity_type,
                 "asset_url": asset.asset_url,
             },
             status=status.HTTP_200_OK,

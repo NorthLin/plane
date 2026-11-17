@@ -70,6 +70,9 @@ class GenericAssetUploadSerializer(serializers.Serializer):
         help_text="UUID of the project to associate with the asset",
         style={"placeholder": "123e4567-e89b-12d3-a456-426614174000"},
     )
+    entity_type = serializers.ChoiceField(
+        choices=["ISSUE_ATTACHMENT", "COMMENT_DESCRIPTION"], required=False, default="ISSUE_ATTACHMENT"
+    )
     external_id = serializers.CharField(
         required=False,
         help_text="External identifier for the asset (for integration tracking)",
