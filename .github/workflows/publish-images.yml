@@ -116,14 +116,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - name: Record public image namespace
-        env:
-          IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: printf '%s' "$IMAGE_NAMESPACE" > dockerhub-namespace.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dockerhub-namespace
-          path: dockerhub-namespace.txt
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
@@ -133,7 +125,7 @@ jobs:
           DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           CGO_ENABLED=0 go build -C apps/cli -o ../../plane .
-          bash configure.sh "$DOCKERHUB_NAMESPACE" "$VERSION" http://localhost:8080
+          bash configure.sh http://localhost:8080 "$VERSION"
           echo 'LISTEN_HTTP_PORT=8080' >> .env
           echo 'API_KEY_RATE_LIMIT=10000/hour' >> .env
           docker compose config --quiet

@@ -2,9 +2,9 @@
 # Generate configuration once; never overwrite an existing deployment's secrets.
 set -euo pipefail
 cd "$(dirname "$0")"
-namespace=${1:?Usage: configure.sh DOCKERHUB_USERNAME VERSION PUBLIC_URL}
-version=${2:?Provide the image version}
-url=${3:?Provide the public URL, e.g. https://plane.example.com}
+namespace=${DOCKERHUB_NAMESPACE:-fonzy666}
+version=${2:-v1.5.0-cli.2}
+url=${1:?Usage: configure.sh PUBLIC_URL [VERSION]}
 [[ "$namespace" =~ ^[a-z0-9][a-z0-9_-]+$ ]] || { echo 'Invalid Docker Hub username' >&2; exit 1; }
 [[ "$version" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || { echo 'Invalid version' >&2; exit 1; }
 [[ "$url" =~ ^https?://[a-zA-Z0-9.:-]+$ ]] || { echo 'Use an http(s) origin without a trailing slash' >&2; exit 1; }

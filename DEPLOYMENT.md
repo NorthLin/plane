@@ -7,8 +7,7 @@ API、后台任务、数据库、缓存、消息队列和文件存储。CLI 按�
 ## 首次部署
 
 服务器需安装 Docker Engine 和 Compose v2，支持 Linux amd64 / arm64。
-先确认域名、外部访问地址，以及镜像发布者的 Docker Hub 用户名。
-这里的用户名是已经发布六个 Plane 镜像的账号，不是部署机器自己的账号。
+镜像默认从 fonzy666 拉取，版本为 v1.5.0-cli.2。部署时只需确认实际访问地址和 HTTPS 方式。
 建议至少 2 核、4 GB 内存，并为数据库和附件预留持久化磁盘空间。
 
 在一个新的目录拉取 main 分支，在仓库根目录运行：
@@ -16,10 +15,10 @@ API、后台任务、数据库、缓存、消息队列和文件存储。CLI 按�
 ```bash
 git clone --branch main https://github.com/NorthLin/plane.git
 cd plane
-bash configure.sh DOCKERHUB_USERNAME v1.5.0-cli.2 https://plane.example.com
+bash configure.sh https://plane.example.com
 ```
 
-将 DOCKERHUB_USERNAME 和访问地址替换为实际值。脚本生成根目录的 .env，权限为
+将访问地址替换为实际值。脚本生成根目录的 .env，权限为
 0600，数据库、消息队列、Django 和文件存储分别使用随机凭据；已有 .env 时拒绝覆盖。
 不要将 .env 提交到 Git。根目录 .env.example 和 setup.sh 属于开发环境，部署时使用
 configure.sh 生成配置即可。
@@ -89,8 +88,9 @@ CI 使用根目录同一份 Compose 和 configure.sh 启动隔离环境，通过
 
 ## 维护和升级
 
-所有服务镜像通过 DOCKERHUB_NAMESPACE 和 APP_RELEASE 统一指定，当前可用版本是
-v1.5.0-cli.2。虽然标签包含 cli，它对应完整 Plane 服务端及其事件 API。
+所有服务镜像默认使用 fonzy666/plane-\*，版本为 v1.5.0-cli.2。
+如需覆盖，可编辑 .env 中的 DOCKERHUB_NAMESPACE 和 APP_RELEASE；初始化时也可通过
+DOCKERHUB_NAMESPACE 环境变量和 configure.sh 的第二个参数指定。虽然标签包含 cli，它对应完整 Plane 服务端及其事件 API。
 
 - 备份 .env 和所有持久化卷，数据库建议同时保留 pg_dump 备份。文件存储在 uploads 卷。
 - 停止服务用 docker compose stop；不要使用 docker compose down -v，它会删除数据卷。
