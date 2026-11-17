@@ -339,7 +339,7 @@ func resourceCommands(resource string) *cobra.Command {
 	return parent
 }
 func commentCommands() *cobra.Command {
-	p := &cobra.Command{Use: "comments", Short: "Read or add task comments"}
+	p := &cobra.Command{Use: "comments", Short: "Read or add task comments", Long: "Read comment_html or post literal HTML with --body. Embedded image-component src values\nare asset UUIDs: resolve them with plane api GET /api/v1/workspaces/SLUG/assets/UUID/.\nDownload the returned temporary asset_url. Local image upload/insertion into comments\nis not supported; attachments upload adds a task attachment. See the packaged README.md."}
 	var project, issue, body string
 	p.PersistentFlags().StringVar(&project, "project", "", "Project UUID")
 	p.PersistentFlags().StringVar(&issue, "issue", "", "Work item UUID")
@@ -366,15 +366,19 @@ func commentCommands() *cobra.Command {
 			return call(cfg, method, base+"projects/"+url.PathEscape(project)+"/work-items/"+url.PathEscape(issue)+"/comments/", data)
 		}}
 		if verb == "add" {
-			c.Flags().StringVar(&body, "body", "", "Comment HTML")
+			c.Long = "Post literal HTML using --body. Local image paths and @file are not read or uploaded.\nInline image upload/insertion into comments is not supported. Use attachments upload\nfor a task attachment, or the web editor for inline comment images."
+			c.Example = "  plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'"
+			c.Flags().StringVar(&body, "body", "", "Literal comment HTML; local paths and @file are not uploaded/read")
 			c.MarkFlagRequired("body")
+		} else {
+			c.Long = "List comments including comment_html. For an embedded image-component, resolve its\nsrc asset UUID with plane api GET /api/v1/workspaces/SLUG/assets/UUID/, then download\nthe returned temporary asset_url. See the packaged README.md for a curl example."
 		}
 		p.AddCommand(c)
 	}
 	return p
 }
 func attachmentCommands() *cobra.Command {
-	p := &cobra.Command{Use: "attachments", Short: "Upload, list, and download task files"}
+	p := &cobra.Command{Use: "attachments", Short: "Upload, list, and download task files", Long: "Manage files in a task's attachment area with --project and --issue UUIDs.\nUploads do not insert images into task descriptions or comments. Embedded images\nare referenced in description_html/comment_html; resolve their asset UUID with\nplane api GET /api/v1/workspaces/SLUG/assets/UUID/ and download asset_url."}
 	p.AddCommand(uploadCommand())
 	var project, issue, output string
 	p.PersistentFlags().StringVar(&project, "project", "", "Project UUID")

@@ -21,7 +21,7 @@ env:
   VERSION: ${{ github.event.inputs.version || github.ref_name }}
 jobs:
   build:
-    if: ${{ !inputs.smoke_only }}
+    if: ${{ !inputs.smoke_only && (github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-cli.')) }}
     strategy:
       fail-fast: false
       matrix:

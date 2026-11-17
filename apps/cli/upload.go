@@ -24,7 +24,7 @@ import (
 
 func uploadCommand() *cobra.Command {
 	var project, issue string
-	cmd := &cobra.Command{Use: "upload FILE", Short: "Upload a task attachment and confirm completion", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{Use: "upload FILE", Short: "Upload a task attachment and confirm completion", Long: "Upload FILE into the task attachment area and return asset_id after confirmation.\nRequires --project and --issue UUIDs. Does not insert the image into a task\ndescription or comment; inline image upload/insertion is not supported.", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		c, e := loadConfig()
 		if e != nil {
 			return e

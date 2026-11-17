@@ -14,7 +14,7 @@ Download install.sh from the source at the release tag, inspect it, then run it:
     plane --version
 
 The installer verifies SHA256SUMS and installs to ~/.local/bin. Set
-PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.2 to pin
+PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.3 to pin
 a release. Ensure the installation directory is on PATH. Homebrew users can run:
 
     brew install NorthLin/tap/plane-cli
@@ -91,14 +91,65 @@ Projects and work-items support list/get/create/update/delete. IDs are UUIDs
 in this first version. --data accepts JSON or @file. The api command exposes the
 rest of the public API, including query parameters and pagination. List commands
 return the server's page; follow its pagination with plane api for larger lists.
-The public generic asset API can resolve inline description image IDs:
 
-    plane api GET /api/v1/workspaces/my-workspace/assets/ASSET_UUID/
+## Images, attachments and comments
 
-Download the returned temporary asset_url to give the image bytes to an Agent.
-Task attachments have dedicated upload/download commands. Downloads never
-forward Plane API credentials to a different storage origin and never overwrite
-an existing destination file.
+Task attachments and images embedded in text are separate. Select a project with
+--project PROJECT_UUID on each command; there is no saved default project.
+Use --workspace SLUG to override the current workspace.
+
+### Upload or download a task attachment
+
+    plane attachments upload ./screenshot.png --project PROJECT_UUID --issue ISSUE_UUID
+    plane attachments list --project PROJECT_UUID --issue ISSUE_UUID
+    plane attachments download ASSET_UUID --project PROJECT_UUID --issue ISSUE_UUID --output ./screenshot.png
+
+Upload returns asset_id after storage upload and server confirmation. It puts the
+file in the selected task's attachment area; it does not insert it into the task
+body or a comment. Download saves the actual bytes, never overwrites an existing
+file, and does not forward Plane credentials to another storage origin. The local
+output directory must already exist. These commands also work for other files.
+
+### Download an image from a task body or comment
+
+Read the HTML containing the image:
+
+    plane work-items get ISSUE_UUID --project PROJECT_UUID
+    plane comments list --project PROJECT_UUID --issue ISSUE_UUID
+
+Task details include description_html; each comment includes comment_html. Plane's
+editor stores embedded images as image-component elements whose src is an asset
+UUID, for example:
+
+    <image-component src="ASSET_UUID"></image-component>
+
+Copy that UUID and resolve it using the workspace **slug** in the API path:
+
+    plane api GET /api/v1/workspaces/WORKSPACE_SLUG/assets/ASSET_UUID/
+
+The response contains asset_url, a temporary download URL. With jq and curl
+installed, download it without sending the Plane API key to storage:
+
+    url=$(plane api GET /api/v1/workspaces/WORKSPACE_SLUG/assets/ASSET_UUID/ | jq -er '.asset_url') &&
+      curl --fail --location "$url" --output ./comment-image.png
+
+Choose a new output filename: curl can overwrite existing files. Refresh asset_url
+if it expires. Asset access requires the corresponding workspace/project access.
+The attachments list/download commands cover task attachments, not images embedded
+in description_html or comment_html. Callback events contain metadata, not image
+bytes; a handler uses the same commands to fetch the content.
+
+### Post a comment and understand image upload limits
+
+    plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'
+
+--body is literal HTML, not a file path; it does not read @file or upload local
+images. Plane's web editor supports images in comments and task descriptions, but
+the CLI currently has no command to upload and insert an image at a chosen position
+in either. Setting src to a local path does not upload a file. Use the web editor
+for inline image uploads, or upload a task attachment with the command above.
+Adding or replacing image-component HTML alone does not complete the image upload
+and entity-binding workflow.
 
 ## Local callbacks
 

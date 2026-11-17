@@ -1,9 +1,16 @@
-Plane with local agent callbacks.
+Plane CLI v1.5.0-cli.3
 
-Download the CLI archive for your OS and CPU, verify it against SHA256SUMS, then place the plane binary on PATH. Includes macOS/Linux on amd64 and arm64.
+Clarifies image and file handling in the bundled README and command help:
 
-Quick install: download apps/cli/install.sh from this release tag, inspect it, then run bash install.sh. It verifies the archive checksum and installs to ~/.local/bin.
+- Upload/download task attachments with workspace, project and work item selection.
+- Find images in task description_html and comment_html, resolve asset UUIDs and download temporary URLs.
+- Explain that comment --body accepts literal HTML; local file paths and @file do not upload images.
+- Explain that inline image upload/insertion into descriptions and comments is not currently supported.
 
-Run plane --help to get started. Login uses your public Plane URL and an API key; callbacks receive event JSON on stdin.
+Install or upgrade: brew update && brew upgrade plane-cli
+First install: brew install NorthLin/tap/plane-cli
+Direct downloads: macOS/Linux on Intel and ARM, with SHA256SUMS and install.sh.
 
-Docker deployment instructions: deployments/release/README.md in the source tree. Docker images are published separately by the Publish images workflow.
+This release updates CLI documentation and help. It does not add inline image upload support.
+Plane server images remain v1.5.0-cli.2. The included deployment configuration uses fonzy666 by default.
+CLI release tags do not automatically rebuild server images; use Publish images manually for server releases.
