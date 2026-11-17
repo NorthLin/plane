@@ -132,6 +132,8 @@ jobs:
           docker compose config --quiet
           docker compose pull
           docker compose up -d
+          docker compose ps -a
+          docker compose run --rm --no-deps proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Check web and API readiness
         working-directory: deployments/release
         run: |
