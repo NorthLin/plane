@@ -2,6 +2,12 @@ name: Publish CLI
 on:
   push:
     tags: ["v[0-9]*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing release tag to publish
+        required: true
+        default: v1.5.0-cli.1
 permissions:
   contents: write
 concurrency:
@@ -11,13 +17,15 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-latest]
+        os: [ubuntu-24.04, macos-15-intel]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: apps/cli
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
@@ -29,13 +37,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache-dependency-path: apps/cli/go.sum
       - name: Package CLI
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: bash apps/cli/package.sh "$RELEASE_TAG"
       - name: Package deployment and installer
         run: |
@@ -44,20 +54,22 @@ jobs:
       - name: Publish downloads
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
           gh release create "$RELEASE_TAG" apps/cli/dist/release/* --verify-tag --title "Plane $RELEASE_TAG" --notes-file deployments/release/NOTES.md
   verify-download:
     needs: release
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
       - name: Install published archive
         env:
-          PLANE_VERSION: ${{ github.ref_name }}
+          PLANE_VERSION: ${{ github.event.inputs.version || github.ref_name }}
         run: |
           bash apps/cli/install.sh
           "$HOME/.local/bin/plane" --version
