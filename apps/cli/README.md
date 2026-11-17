@@ -4,7 +4,22 @@ A macOS/Linux client for self-hosted Plane. The daemon opens an outbound HTTPS
 SSE subscription; no inbound port, public callback URL, or tunnel is required.
 Commands use the existing /api/v1/ API and emit JSON. Events are NDJSON.
 
-## Build and log in
+## Install and log in
+
+Published binaries for macOS/Linux (Intel and ARM) are available from
+[GitHub Releases](https://github.com/NorthLin/plane/releases/latest).
+Download install.sh from the source at the release tag, inspect it, then run it:
+
+    bash install.sh
+    plane --version
+
+The installer verifies SHA256SUMS and installs to ~/.local/bin. Set
+PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.1 to pin
+a release. Ensure the installation directory is on PATH. Homebrew users can run:
+
+    brew install NorthLin/tap/plane-cli
+
+## Build from source
 
 From this directory, with Go 1.19 or newer:
 
@@ -201,9 +216,10 @@ while streaming, including restricted guest visibility. SSE sends heartbeats and
 rotates the connection after 25 seconds; the daemon resumes automatically. Disable
 proxy response buffering/compression and allow idle timeouts above 30 seconds.
 Responses include X-Accel-Buffering: no and bypass Django gzip buffering.
-This Django WSGI implementation occupies one worker/thread per active stream;
-provision threaded workers for the number of subscribed clients. Large concurrent
-fleets will need an async event gateway. Storage URLs must be reachable from clients.
+Under WSGI each active stream occupies one worker/thread; production ASGI uses an
+async iterator and runs database polling off the event loop.
+Provision threaded workers under WSGI for the number of subscribed clients. Large concurrent
+fleets may need a dedicated event gateway. Storage URLs must be reachable from clients.
 
 ## Verification
 

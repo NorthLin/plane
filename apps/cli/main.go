@@ -29,8 +29,10 @@ type Config struct {
 	Credential string `json:"credential"`
 }
 
+var version = "dev"
+
 var configDir, workspace string
-var root = &cobra.Command{Use: "plane", Short: "Manage Plane work and run local event callbacks", SilenceUsage: true, SilenceErrors: true}
+var root = &cobra.Command{Use: "plane", Short: "Manage Plane work and run local event callbacks", Version: version, SilenceUsage: true, SilenceErrors: true}
 
 func main() {
 	root.PersistentFlags().StringVar(&configDir, "config-dir", "", "Isolated profile directory (default: ~/.config/plane)")

@@ -121,6 +121,36 @@ def test_invalid_and_expired_cursors(api_key_client, workspace, event_project):
     assert api_key_client.get(url, {"after": 9999999999}).status_code in (409, 410)
 
 
+@pytest.mark.django_db(transaction=True)
+def test_asgi_stream_yields_without_buffering(api_token, workspace, event_project):
+    import asyncio
+    from django.test import AsyncClient
+    from channels.db import database_sync_to_async
+
+    issue = Issue.objects.create(name="ASGI", workspace=workspace, project=event_project)
+
+    async def check():
+        response = await AsyncClient().get(
+            f"/api/v1/workspaces/{workspace.slug}/events/",
+            headers={"Accept": "text/event-stream", "X-Api-Key": api_token.token},
+        )
+        assert response.status_code == 200
+        assert response.is_async
+        stream = aiter(response.streaming_content)
+        try:
+            assert await asyncio.wait_for(anext(stream), 2) == b"retry: 1000\n\n"
+            assert str(event_project.id).encode() in await asyncio.wait_for(anext(stream), 2)
+            assert str(issue.id).encode() in await asyncio.wait_for(anext(stream), 2)
+            assert await asyncio.wait_for(anext(stream), 2) == b": heartbeat\n\n"
+            await database_sync_to_async(APIToken.objects.filter(pk=api_token.pk).update)(is_active=False)
+            assert await asyncio.wait_for(anext(stream), 3) == b"event: revoked\ndata: {}\n\n"
+        finally:
+            await stream.aclose()
+            await database_sync_to_async(response.close)()
+
+    asyncio.run(check())
+
+
 def test_update_fields_does_not_report_unsaved_changes(workspace, event_project):
     issue = Issue.objects.create(name="Persisted", workspace=workspace, project=event_project)
     cursor = WorkspaceEvent.objects.latest("id").id

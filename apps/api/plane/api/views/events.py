@@ -4,10 +4,13 @@
 
 """Authenticated SSE and finite polling over the same durable cursor."""
 
+import asyncio
 import json
 import time
 from datetime import timedelta
 
+from channels.db import database_sync_to_async
+from django.core.handlers.asgi import ASGIRequest
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import close_old_connections
@@ -101,7 +104,7 @@ class EventStreamEndpoint(BaseAPIView):
             )
         user_id, workspace_id, token_id = request.user.pk, workspace.pk, token.pk
 
-        def stream():
+        def stream(sleep=True):
             nonlocal cursor
             # Short-lived streams bound WSGI worker occupancy and reauthenticate regularly.
             deadline = time.monotonic() + 25
@@ -128,11 +131,33 @@ class EventStreamEndpoint(BaseAPIView):
                         yield f"id: {event.id}\nevent: message\ndata: {payload}\n\n"
                         cursor = event.id
                     yield ": heartbeat\n\n"
-                    time.sleep(1)
+                    if sleep:
+                        time.sleep(1)
             finally:
                 close_old_connections()
 
-        response = StreamingHttpResponse(stream(), content_type="text/event-stream")
+        async def async_stream():
+            # Django buffers sync iterators under ASGI. Advance the iterator off
+            # the event loop, closing DB connections after each polling batch.
+            iterator = stream(sleep=False)
+            sentinel = object()
+
+            def advance():
+                return next(iterator, sentinel)
+
+            try:
+                while True:
+                    frame = await database_sync_to_async(advance)()
+                    if frame is sentinel:
+                        return
+                    yield frame
+                    if frame == ": heartbeat\n\n":
+                        await asyncio.sleep(1)
+            finally:
+                await database_sync_to_async(iterator.close)()
+
+        content = async_stream() if isinstance(request._request, ASGIRequest) else stream()
+        response = StreamingHttpResponse(content, content_type="text/event-stream")
         response["Cache-Control"] = "no-cache, no-transform"
         response["X-Accel-Buffering"] = "no"
         response["Content-Encoding"] = "identity"
