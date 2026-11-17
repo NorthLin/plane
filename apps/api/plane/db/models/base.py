@@ -20,7 +20,13 @@ class BaseModel(AuditModel):
     class Meta:
         abstract = True
 
-    def save(self, *args, created_by_id=None, disable_auto_set_user=False, **kwargs):
+    def save(self, *args, **kwargs):
+        from plane.utils.events import record_model_event
+
+        with record_model_event(self, using=kwargs.get("using") or self._state.db or "default"):
+            return self._save_with_audit(*args, **kwargs)
+
+    def _save_with_audit(self, *args, created_by_id=None, disable_auto_set_user=False, **kwargs):
         if not disable_auto_set_user:
             # Check if created_by_id is provided
             if created_by_id:

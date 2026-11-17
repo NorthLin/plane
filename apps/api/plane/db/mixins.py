@@ -46,8 +46,29 @@ class UserAuditModel(models.Model):
 
 
 class SoftDeletionQuerySet(models.QuerySet):
+    def bulk_create(self, objs, *args, **kwargs):
+        # Assignment and label serializers use bulk_create, bypassing Model.save.
+        from contextlib import ExitStack
+        from plane.utils.events import record_model_event
+
+        objs = list(objs)
+        if self.model._meta.model_name not in {"issueassignee", "issuelabel"}:
+            return super().bulk_create(objs, *args, **kwargs)
+        with ExitStack() as stack:
+            for instance in objs:
+                stack.enter_context(record_model_event(instance, using=self.db))
+            return super().bulk_create(objs, *args, **kwargs)
+
     def delete(self, soft=True):
         if soft:
+            from plane.utils.events import EVENT_MODELS
+            from django.db import transaction
+
+            if self.model._meta.model_name in EVENT_MODELS:
+                with transaction.atomic(using=self.db):
+                    for instance in self:
+                        instance.delete(using=self.db)
+                return
             return self.update(deleted_at=timezone.now())
         else:
             return super().delete()
