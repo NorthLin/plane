@@ -339,7 +339,7 @@ func resourceCommands(resource string) *cobra.Command {
 	return parent
 }
 func commentCommands() *cobra.Command {
-	p := &cobra.Command{Use: "comments", Short: "Read or add task comments", Long: "Read comment_html or post literal HTML with --body. Embedded image-component src values\nare asset UUIDs: resolve them with plane api GET /api/v1/workspaces/SLUG/assets/UUID/.\nDownload the returned temporary asset_url. Use comments add --image FILE to upload and insert local images (server v1.5.0-cli.4+).\nattachments upload adds a task attachment. See the packaged README.md."}
+	p := &cobra.Command{Use: "comments", Short: "Read or add task comments", Long: "Read comment_html or post literal HTML with --body. Embedded image-component src values\nare asset UUIDs: resolve them with plane api GET /api/v1/workspaces/SLUG/assets/UUID/.\nDownload the returned temporary asset_url. Use comments add --image FILE to upload and insert local images (server v1.5.1+).\nattachments upload adds a task attachment. See the packaged README.md."}
 	var project, issue, body string
 	var images []string
 	p.PersistentFlags().StringVar(&project, "project", "", "Project UUID")
@@ -375,7 +375,7 @@ func commentCommands() *cobra.Command {
 			return call(cfg, method, base+"projects/"+url.PathEscape(project)+"/work-items/"+url.PathEscape(issue)+"/comments/", data)
 		}}
 		if verb == "add" {
-			c.Long = "Post HTML with --body; add local images with repeated --image FILE flags.\nImages append after the text, or replace {{image:1}}, {{image:2}} placeholders.\nRequires Plane server v1.5.0-cli.4+ for images. --body is literal HTML, not @file."
+			c.Long = "Post HTML with --body; add local images with repeated --image FILE flags.\nImages append after the text, or replace {{image:1}}, {{image:2}} placeholders.\nRequires Plane server v1.5.1+ for images. --body is literal HTML, not @file."
 			c.Example = "  plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'"
 			c.Flags().StringVar(&body, "body", "", "Comment HTML; use {{image:1}} to position --image files")
 			c.Flags().StringArrayVar(&images, "image", nil, "Local image file (repeatable); append or use {{image:N}} in --body")

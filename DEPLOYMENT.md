@@ -7,7 +7,7 @@ API、后台任务、数据库、缓存、消息队列和文件存储。CLI 按�
 ## 首次部署
 
 服务器需安装 Docker Engine 和 Compose v2，支持 Linux amd64 / arm64。
-镜像默认从 fonzy666 拉取，版本为 v1.5.0-cli.4。部署时只需确认实际访问地址和 HTTPS 方式。
+镜像默认从 fonzy666 拉取，版本为 v1.5.1。部署时只需确认实际访问地址和 HTTPS 方式。
 建议至少 2 核、4 GB 内存，并为数据库和附件预留持久化磁盘空间。
 
 在一个新的目录拉取 main 分支，在仓库根目录运行：
@@ -88,9 +88,9 @@ CI 使用根目录同一份 Compose 和 configure.sh 启动隔离环境，通过
 
 ## 维护和升级
 
-所有服务镜像默认使用 fonzy666/plane-\*，版本为 v1.5.0-cli.4。
+所有服务镜像默认使用 fonzy666/plane-\*，版本为 v1.5.1。
 如需覆盖，可编辑 .env 中的 DOCKERHUB_NAMESPACE 和 APP_RELEASE；初始化时也可通过
-DOCKERHUB_NAMESPACE 环境变量和 configure.sh 的第二个参数指定。虽然标签包含 cli，它对应完整 Plane 服务端及其事件 API。
+DOCKERHUB_NAMESPACE 环境变量和 configure.sh 的第二个参数指定。服务端镜像和 CLI 使用同一个正式版本号。
 
 - 备份 .env 和所有持久化卷，数据库建议同时保留 pg_dump 备份。文件存储在 uploads 卷。
 - 停止服务用 docker compose stop；不要使用 docker compose down -v，它会删除数据卷。

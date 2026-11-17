@@ -14,7 +14,7 @@ Download install.sh from the source at the release tag, inspect it, then run it:
     plane --version
 
 The installer verifies SHA256SUMS and installs to ~/.local/bin. Set
-PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.0-cli.4 to pin
+PLANE_INSTALL_DIR to choose another directory, or PLANE_VERSION=v1.5.1 to pin
 a release. Ensure the installation directory is on PATH. Homebrew users can run:
 
     brew install NorthLin/tap/plane-cli
@@ -143,7 +143,7 @@ bytes; a handler uses the same commands to fetch the content.
 
     plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Ready for review</p>'
 
-Upload local images into a new comment (requires Plane server v1.5.0-cli.4+):
+Upload local images into a new comment (requires Plane server v1.5.1+):
 
     plane comments add --project PROJECT_UUID --issue ISSUE_UUID --body '<p>Evidence</p>' --image ./screenshot.png
     plane comments add --project PROJECT_UUID --issue ISSUE_UUID --image ./screenshot.png

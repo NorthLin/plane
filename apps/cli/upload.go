@@ -86,7 +86,7 @@ func uploadFile(c Config, path, filename, project string, inline bool) (string, 
 		return "", e
 	}
 	if inline && result.EntityType != "COMMENT_DESCRIPTION" {
-		return "", fmt.Errorf("server does not support comment image uploads; upgrade Plane to v1.5.0-cli.4 or newer")
+		return "", fmt.Errorf("server does not support comment image uploads; upgrade Plane to v1.5.1 or newer")
 	}
 	storageURL, e := url.Parse(result.Upload.URL)
 	if e != nil || storageURL.Host == "" || (storageURL.Scheme != "http" && storageURL.Scheme != "https") {

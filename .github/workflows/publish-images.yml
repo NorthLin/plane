@@ -7,7 +7,7 @@ on:
       version:
         description: Image tag (use a new immutable version)
         required: true
-        default: v1.5.0-cli.4
+        default: v1.5.1
       smoke_only:
         description: Verify existing images without rebuilding
         type: boolean
