@@ -19,6 +19,7 @@ import { logger, loggerMiddleware } from "@plane/logger";
 import { CONTROLLERS } from "@/controllers";
 // env
 import { env } from "@/env";
+import { stopLiveEvents } from "@/events/stats";
 // hocuspocus server
 import { HocusPocusServerManager } from "@/hocuspocus";
 import { drainCollaborationServer, withinShutdownDeadline } from "@/lib/drain-server";
@@ -120,7 +121,8 @@ export class Server {
     try {
       // Redis stays up until pending saves finish: the Redis extension takes a lock for every store.
       await withinShutdownDeadline(async (remainingMs) => {
-        const [httpError] = await Promise.all([
+        const [, httpError] = await Promise.all([
+          stopLiveEvents(),
           httpClosed,
           this.hocuspocusServer ? drainCollaborationServer(this.hocuspocusServer, remainingMs()) : Promise.resolve(),
         ]);

@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  stopEvents: vi.fn(() => Promise.resolve()),
   drain: vi.fn<() => Promise<void>>(),
   redisDisconnect: vi.fn(() => Promise.resolve()),
 }));
@@ -20,6 +21,7 @@ vi.mock("@/env", () => ({
     CORS_ALLOWED_ORIGINS: "",
   },
 }));
+vi.mock("@/events/stats", () => ({ stopLiveEvents: mocks.stopEvents }));
 vi.mock("@/controllers", () => ({ CONTROLLERS: [] }));
 vi.mock("@/hocuspocus", () => ({ HocusPocusServerManager: { getInstance: vi.fn() } }));
 vi.mock("@/redis", () => ({ redisManager: { disconnect: mocks.redisDisconnect } }));
@@ -51,11 +53,13 @@ describe("Server.destroy", () => {
     await expect(serverWith(new Error("ERR_SERVER_NOT_RUNNING")).destroy()).resolves.toBeUndefined();
     expect(drained).toBe(true);
     expect(mocks.redisDisconnect).toHaveBeenCalledOnce();
+    expect(mocks.stopEvents).toHaveBeenCalledOnce();
   });
 
   it("still disconnects Redis and rejects when the drain fails", async () => {
     mocks.drain.mockRejectedValue(new Error("Failed to persist 1 document(s) during shutdown: wiki"));
     await expect(serverWith().destroy()).rejects.toThrow("Failed to persist 1 document(s)");
     expect(mocks.redisDisconnect).toHaveBeenCalledOnce();
+    expect(mocks.stopEvents).toHaveBeenCalledOnce();
   });
 });

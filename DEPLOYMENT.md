@@ -7,7 +7,7 @@ API、后台任务、数据库、缓存、消息队列和文件存储。CLI 按�
 ## 首次部署
 
 服务器需安装 Docker Engine 和 Compose v2，支持 Linux amd64 / arm64。
-镜像默认从 fonzy666 拉取，版本为 v1.5.1。部署时只需确认实际访问地址和 HTTPS 方式。
+镜像默认从 fonzy666 拉取，版本为 v1.5.2。部署时只需确认实际访问地址和 HTTPS 方式。
 建议至少 2 核、4 GB 内存，并为数据库和附件预留持久化磁盘空间。
 
 在一个新的目录拉取 main 分支，在仓库根目录运行：
@@ -86,9 +86,20 @@ plane auth login --server https://plane.example.com --workspace WORKSPACE_SLUG
 CI 使用根目录同一份 Compose 和 configure.sh 启动隔离环境，通过网关验证任务操作、
 事件流、本地回调、断线恢复、图片上传下载及 SHA256 一致性。
 
+## 网页自动更新
+
+任务列表、看板和已打开任务的评论/活动会自动同步其他用户或 API/CLI 的更新。
+根目录 Compose 默认启用 LIVE_EVENTS_ENABLED=1；如需关闭，在 .env 中设置为 0。
+API、worker、live 和 web 应使用同一版本，并保留 /live/ 路径的 WebSocket 代理。
+WEB_URL 必须是浏览器实际访问的 origin；额外访问地址可通过
+LIVE_EVENTS_ALLOWED_ORIGINS 配置，以逗号分隔。
+
+事件按登录用户的项目成员权限订阅；guest 目前仍需刷新页面。网络重连后会重新获取
+列表和已打开任务的评论，补齐断线期间的变更。CLI 的持久事件库和 callback 不受影响。
+
 ## 维护和升级
 
-所有服务镜像默认使用 fonzy666/plane-\*，版本为 v1.5.1。
+所有服务镜像默认使用 fonzy666/plane-\*，版本为 v1.5.2。
 如需覆盖，可编辑 .env 中的 DOCKERHUB_NAMESPACE 和 APP_RELEASE；初始化时也可通过
 DOCKERHUB_NAMESPACE 环境变量和 configure.sh 的第二个参数指定。服务端镜像和 CLI 使用同一个正式版本号。
 

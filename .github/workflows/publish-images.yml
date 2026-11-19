@@ -7,7 +7,7 @@ on:
       version:
         description: Image tag (use a new immutable version)
         required: true
-        default: v1.5.1
+        default: v1.5.2
       smoke_only:
         description: Verify existing images without rebuilding
         type: boolean
@@ -113,7 +113,7 @@ jobs:
     needs: manifest
     if: ${{ always() && (needs.manifest.result == 'success' || inputs.smoke_only) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -144,6 +144,28 @@ jobs:
           docker compose cp plane api:/tmp/plane
           docker compose cp apps/cli/tests/e2e.py api:/tmp/cli-e2e.py
           docker compose exec -T -e PYTHONPATH=/code -e PLANE_E2E_SERVER=http://proxy -e PLANE_CLI_BINARY=/tmp/plane api python /tmp/cli-e2e.py
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Verify live updates in Chromium
+        env:
+          PLANE_E2E_SERVER: http://localhost:8080
+          PLANE_LIVE_FIXTURE: /tmp/live-fixture.json
+          PLANE_CLI_BINARY: ${{ github.workspace }}/plane
+          NODE_PATH: /tmp/plane-browser/node_modules
+        run: |
+          npm install --prefix /tmp/plane-browser playwright
+          /tmp/plane-browser/node_modules/.bin/playwright install --with-deps chromium
+          docker compose cp apps/web/tests/e2e/live-fixture.py api:/tmp/live-fixture.py
+          docker compose exec -T -e PYTHONPATH=/code api python /tmp/live-fixture.py prepare /tmp/live-fixture.json
+          docker compose cp api:/tmp/live-fixture.json /tmp/live-fixture.json
+          chmod 600 /tmp/live-fixture.json
+          node apps/web/tests/e2e/live-updates.cjs
+      - name: Remove browser fixture
+        if: always()
+        run: |
+          docker compose exec -T -e PYTHONPATH=/code api python /tmp/live-fixture.py cleanup /tmp/live-fixture.json || true
+          rm -f /tmp/live-fixture.json
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail=80

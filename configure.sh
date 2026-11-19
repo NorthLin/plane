@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 namespace=${DOCKERHUB_NAMESPACE:-fonzy666}
-version=${2:-v1.5.1}
+version=${2:-v1.5.2}
 url=${1:?Usage: configure.sh PUBLIC_URL [VERSION]}
 [[ "$namespace" =~ ^[a-z0-9][a-z0-9_-]+$ ]] || { echo 'Invalid Docker Hub username' >&2; exit 1; }
 [[ "$version" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || { echo 'Invalid version' >&2; exit 1; }
@@ -18,6 +18,7 @@ set -o noclobber
   echo "APP_DOMAIN=${url#*://}"
   echo "CORS_ALLOWED_ORIGINS=$url"
   echo 'API_BASE_URL=http://api:8000'
+  echo 'LIVE_EVENTS_ENABLED=1'
   echo 'SITE_ADDRESS=:80'
   echo 'LISTEN_HTTP_PORT=80'
   echo 'NUM_PROXIES=1'
