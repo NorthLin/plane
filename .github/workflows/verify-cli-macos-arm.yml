@@ -1,0 +1,25 @@
+name: Verify published macOS ARM CLI
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published release tag
+        required: true
+        default: v1.5.3
+permissions:
+  contents: read
+jobs:
+  install:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify native archive and Homebrew
+        env:
+          PLANE_VERSION: ${{ inputs.version }}
+        run: |
+          test "$(uname -m)" = arm64
+          bash apps/cli/install.sh
+          "$HOME/.local/bin/plane" --version
+          brew install NorthLin/tap/plane-cli
+          brew test NorthLin/tap/plane-cli
+          test "$(brew info --json=v2 NorthLin/tap/plane-cli | python3 -c 'import json,sys; print(json.load(sys.stdin)["formulae"][0]["installed"][0]["version"])')" = "${PLANE_VERSION#v}"
