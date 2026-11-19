@@ -58,7 +58,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" apps/cli/dist/release/* --verify-tag --title "Plane $RELEASE_TAG" --notes-file deployments/release/NOTES.md
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" apps/cli/dist/release/* --clobber
+            gh release edit "$RELEASE_TAG" --draft=false --title "Plane $RELEASE_TAG" --notes-file deployments/release/NOTES.md
+          else
+            gh release create "$RELEASE_TAG" apps/cli/dist/release/* --verify-tag --title "Plane $RELEASE_TAG" --notes-file deployments/release/NOTES.md
+          fi
   verify-download:
     needs: release
     strategy:
