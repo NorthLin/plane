@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 namespace=${DOCKERHUB_NAMESPACE:-fonzy666}
-version=${2:-v1.5.2}
+version=${2:-v1.5.3}
 url=${1:?Usage: configure.sh PUBLIC_URL [VERSION]}
 [[ "$namespace" =~ ^[a-z0-9][a-z0-9_-]+$ ]] || { echo 'Invalid Docker Hub username' >&2; exit 1; }
 [[ "$version" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || { echo 'Invalid version' >&2; exit 1; }
