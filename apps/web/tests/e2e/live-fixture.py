@@ -15,6 +15,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "plane.settings.local")
 django.setup()
 from django.conf import settings  # noqa: E402
+from django.core.cache import cache  # noqa: E402
 from django.test import Client  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from plane.db.models import (  # noqa: E402
@@ -37,17 +38,20 @@ if sys.argv[1] == "cleanup":
     path.unlink()
 else:
     suffix = secrets.token_hex(5)
-    Instance.objects.get_or_create(
-        defaults=dict(
+    instance = Instance.objects.first()
+    if instance is None:
+        instance = Instance.objects.create(
             instance_name="E2E",
-            current_version="1.5.2",
+            current_version="1.5.3",
             last_checked_at=timezone.now(),
-            is_setup_done=True,
-            is_signup_screen_visited=True,
-            is_verified=True,
-        ),
-        instance_id="live-e2e",
-    )
+            instance_id="live-e2e",
+        )
+    instance.is_setup_done = True
+    instance.is_signup_screen_visited = True
+    instance.is_verified = True
+    instance.save()
+    # Deployment startup already queried this endpoint before the fixture existed.
+    cache.delete("/api/instances/")
     user = User.objects.create(
         email=f"live-{suffix}@example.invalid",
         username=f"live-{suffix}",
